@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Question <%= index + 1 %> of <%= total %></title>
+  <style>
+    /* Add your CSS here for layout */
+    .container { width: 600px; margin: 0 auto; }
+    .avatar { width: 250px; height: 250px; }
+    .next-btn { 
+      background: #ffa07a; 
+      border: none; 
+      padding: 10px 20px; 
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .finish-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    #recordBtn {
+      background: #4caf50;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Question <%= index + 1 %> of <%= total %></h2>
+    <img src="/avatar1.png" class="avatar" alt="Avatar" />
+    <div class="audio-controls">
+      <audio id="questionAudio" controls>
+        <source src="/<%= question.audio %>" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+      <% if (index + 1 < total) { %>
+        <form action="/next" method="POST" style="margin: 0;">
+          <input type="hidden" name="currentIndex" value="<%= index %>">
+          <button type="submit" class="next-btn">Next &gt;</button>
+        </form>
+      <% } else { %>
+        <form action="/finish" method="POST" style="margin: 0;">
+          <button type="submit" class="finish-btn">Finish</button>
+        </form>
+      <% } %>
+    </div>
+    <div>
+      <button id="recordBtn">Recording</button>
+      <span id="recordStatus"></span>
+      <span id="timer" style="margin-left:10px;font-weight:bold;"></span>
+    </div>
+  </div>
+  <script>
+  const questionNumber = <%= index + 1 %>;
+  let mediaRecorder;
+  let audioChunks = [];
+  const recordBtn = document.getElementById('recordBtn');
+  const recordStatus = document.getElementById('recordStatus');
+  const timerDisplay = document.getElementById('timer');
+  const questionAudio = document.getElementById('questionAudio');
+
+  let timerInterval;
+  let timeLeft = 0;
+  let timeoutId;
+  let playCount = 0;
+
+  // Set time limit based on question type
+  function getTimeLimit() {
+    const questionType = "<%= question.type %>";
+    return questionType === 'I' ? 60 : 120; // 1 minute for type I, 2 minutes for type A
+  }
+
+  function updateTimerDisplay() {
+    const min = Math.floor(timeLeft / 60);
+    const sec = timeLeft % 60;
+    timerDisplay.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+  }
+
+  function startTimer() {
+    timeLeft = getTimeLimit();
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) {
+        stopRecording();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    timerDisplay.textContent = '';
+  }
+
+  async function saveAudio(audioBlob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.mp3');
+    formData.append('questionNumber', questionNumber);
+
+    try {
+      const response = await fetch('/save-audio', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save audio');
+      }
+      
+      const result = await response.json();
+      if (result.success) {
+        recordStatus.textContent = 'Recording saved successfully';
+        // Disable the recording button after successful save
+        recordBtn.disabled = true;
+        recordBtn.style.opacity = '0.5';
+        recordBtn.style.cursor = 'not-allowed';
+      } else {
+        throw new Error(result.error || 'Failed to save recording');
+      }
+    } catch (error) {
+      console.error('Error saving audio:', error);
+      recordStatus.textContent = 'Error saving recording';
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      recordBtn.textContent = 'Recording';
+      recordStatus.textContent = 'Saving...';
+      stopTimer();
+      clearTimeout(timeoutId);
+    }
+  }
+
+  function startRecording() {
+    if (!navigator.mediaDevices) {
+      alert('Your browser does not support audio recording.');
+      return;
+    }
+
+    // Check if button is disabled
+    if (recordBtn.disabled) {
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        mediaRecorder = new MediaRecorder(stream);
+
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => {
+          audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async e => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+          await saveAudio(audioBlob);
+        };
+
+        mediaRecorder.start();
+        recordBtn.textContent = 'Stop Recording';
+        recordStatus.textContent = 'Recording...';
+        startTimer();
+
+        // Auto-stop after time limit
+        timeoutId = setTimeout(stopRecording, getTimeLimit() * 1000);
+      })
+      .catch(err => {
+        console.error('Error accessing microphone:', err);
+        alert('Error accessing microphone. Please make sure you have granted permission.');
+      });
+  }
+
+  recordBtn.onclick = async function() {
+    // Check if button is disabled
+    if (recordBtn.disabled) {
+      return;
+    }
+
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      stopRecording();
+      return;
+    }
+
+    startRecording();
+  };
+
+  // Handle audio end event
+  questionAudio.addEventListener('ended', function() {
+    // Check if button is disabled before auto-starting
+    if (recordBtn.disabled) {
+      return;
+    }
+
+    playCount++;
+    if (playCount === 2) {
+      // Auto-start recording after second play
+      startRecording();
+    }
+  });
+  </script>
+</body>
+</html>

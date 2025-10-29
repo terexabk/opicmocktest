@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Complete</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+    .container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 400px;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 1rem;
+    }
+    .message {
+      color: #4CAF50;
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .results-container {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      width: 600px;
+    }
+    .results-title {
+      color: #333;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .audio-item {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .audio-item audio {
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+    .audio-label {
+      font-weight: bold;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+    .evaluation-container {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      display: none;
+    }
+    .evaluation-container.show {
+      display: block;
+    }
+    .evaluation-loading {
+      text-align: center;
+      color: #666;
+    }
+    .evaluate-btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    .evaluate-btn:hover {
+      background: #0056b3;
+    }
+    .evaluate-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Congratulations!</h1>
+    <div class="message">You completed the test with level: AL</div>
+  </div>
+
+  <div class="results-container">
+    <h2 class="results-title">View and Listen Again All Results</h2>
+    <div id="audioList">
+      <% audioFiles.forEach((file, index) => { %>
+        <div class="audio-item">
+          <div class="audio-label">Answer <%= index + 1 %></div>
+          <audio controls>
+            <source src="/result_audio/<%= file %>" type="audio/mp3">
+            Your browser does not support the audio element.
+          </audio>
+          <button class="evaluate-btn" onclick="evaluateAudio('<%= file %>', this)">Evaluate Answer</button>
+          <div class="evaluation-container" id="eval-<%= file %>">
+            <div class="evaluation-loading">Evaluating...</div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+
+  <script>
+    async function evaluateAudio(file, button) {
+      const evalContainer = document.getElementById(`eval-${file}`);
+      evalContainer.classList.add('show');
+      button.disabled = true;
+
+      try {
+        const response = await fetch('/evaluate-audio', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ audioFile: file })
+        });
+
+        if (!response.ok) {
+          throw new Error('Evaluation failed');
+        }
+
+        const result = await response.json();
+        
+        // Format the evaluation result
+        const formattedEval = `
+          <h4>AI Evaluation</h4>
+          <p><strong>Transcription:</strong> ${result.transcription}</p>
+          <div>${result.evaluation}</div>
+        `;
+        
+        evalContainer.innerHTML = formattedEval;
+      } catch (error) {
+        console.error('Error:', error);
+        evalContainer.innerHTML = '<p style="color: red;">Error evaluating audio. Please try again.</p>';
+        button.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html> 
