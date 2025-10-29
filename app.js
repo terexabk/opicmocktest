@@ -10,7 +10,7 @@ const session = require('express-session');
 const app = express();
 
 // Connect to MongoDB - Use environment variable if available
-const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://dbOpicKorea:270991@cluster0.tujpjti.mongodb.net/opic_korean?retryWrites=true&w=majority&appName=Cluster0';
+const mongoURI = process.env.MONGODB_URI;
 mongoose.connect(mongoURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true

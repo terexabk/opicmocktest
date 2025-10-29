@@ -1,17 +1,26 @@
 {
   "name": "opic-mock-test",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "OPIC mock test web app",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "node app.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "engines": {
+    "node": ">=18.x"
+  },
   "dependencies": {
+    "body-parser": "^1.20.3",
     "dotenv": "^16.5.0",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
     "express-session": "^1.18.1",
+    "mongoose": "^8.7.0",
+    "multer": "^1.4.5-lts.1",
     "openai": "^4.100.0"
   }
 }
