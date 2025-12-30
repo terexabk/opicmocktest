@@ -171,10 +171,10 @@ router.get('/question/:index', async (req, res) => {
         }
         topicUsed = true;
       } else if (index === 3) {
-        // Question 3 - get type="A" and type_nbr=0
+        // Question 3 - get type="I" and type_nbr=0
         question = await Question.findOne({
           topic: selectedTopic.topic,
-          type: "A",
+          type: "I",
           type_nbr: 0
         }).sort({ get_date: 1 });
 
@@ -243,7 +243,7 @@ router.get('/question/:index', async (req, res) => {
       
       if (!req.session.selectedTopic5) {
         // If we don't have a selected topic yet, get one from topic_list
-        const topicList = await TopicList.find({ ques_nbr: 5 }).sort({ get_date: 1 });
+        const topicList = await TopicList.find({ ques_nbr: 2 }).sort({ get_date: 1 });
         if (topicList.length === 0) {
           return res.send('Topic information not found');
         }
@@ -253,7 +253,7 @@ router.get('/question/:index', async (req, res) => {
       } else {
         // Use the stored topic
         selectedTopic = await TopicList.findOne({ 
-          ques_nbr: 5,
+          ques_nbr: 2,
           topic: req.session.selectedTopic5 
         });
         if (!selectedTopic) {
@@ -273,7 +273,7 @@ router.get('/question/:index', async (req, res) => {
 
         if (!question) {
           // Try next topic
-          const topicList = await TopicList.find({ ques_nbr: 5 }).sort({ get_date: 1 });
+          const topicList = await TopicList.find({ ques_nbr: 2 }).sort({ get_date: 1 });
           const currentIndex = topicList.findIndex(t => t.topic === selectedTopic.topic);
           if (currentIndex < topicList.length - 1) {
             selectedTopic = topicList[currentIndex + 1];
@@ -300,7 +300,7 @@ router.get('/question/:index', async (req, res) => {
 
         if (!question) {
           // Try next topic
-          const topicList = await TopicList.find({ ques_nbr: 5 }).sort({ get_date: 1 });
+          const topicList = await TopicList.find({ ques_nbr: 2 }).sort({ get_date: 1 });
           const currentIndex = topicList.findIndex(t => t.topic === selectedTopic.topic);
           if (currentIndex < topicList.length - 1) {
             selectedTopic = topicList[currentIndex + 1];
@@ -330,7 +330,7 @@ router.get('/question/:index', async (req, res) => {
 
         if (questions.length === 0) {
           // Try next topic
-          const topicList = await TopicList.find({ ques_nbr: 5 }).sort({ get_date: 1 });
+          const topicList = await TopicList.find({ ques_nbr: 2 }).sort({ get_date: 1 });
           const currentIndex = topicList.findIndex(t => t.topic === selectedTopic.topic);
           if (currentIndex < topicList.length - 1) {
             selectedTopic = topicList[currentIndex + 1];
